@@ -8,7 +8,7 @@ import serviceRouter from "./modules/services/service.routes.js";
 import authRouter from "./modules/auth/auth.routes.js";
 import doctorServiceRouter from "./modules/doctor/doctor.service.routes.js";
 import scheduleRouter from "./modules/schedule/schedule.routes.js";
-
+import cancellationRouter from "./modules/cancellations/cancellation.routes.js";
 
 
 import { sessionMiddleware } from "./config/session.js";
@@ -53,7 +53,7 @@ app.use("/api/services", serviceRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/doctor/services", doctorServiceRouter);
 app.use("/api/doctor/schedule", scheduleRouter);
-
+app.use("/api/doctor/appointments", cancellationRouter);
 
 app.use((
     error: unknown,
