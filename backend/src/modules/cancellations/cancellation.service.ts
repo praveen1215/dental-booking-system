@@ -3,6 +3,7 @@ import { AppDataSource } from "../../config/data_source.js";
 import { Appointment } from "../../entities/Appointment.js";
 import { AppointmentCancellation } from "../../entities/AppointmentCancellation.js";
 import { Doctor } from "../../entities/Doctor.js";
+import { queueEmailNotification } from "../notifications/notification.service.js";
 
 export class CancellationError extends Error {
     constructor(
@@ -94,6 +95,35 @@ export async function cancelAppointment(
 
         const savedCancellation =
             await cancellationRepository.save(cancellation);
+
+        // Retrieve the patient associated with the appointment
+        const appointmentWithPatient =
+            await appointmentRepository.findOne({
+                where: {
+                    appointmentId: appointment.appointmentId
+                },
+                relations: {
+                    patient: true
+                }
+            });
+
+        if (!appointmentWithPatient) {
+            throw new Error("Appointment patient record not found.");
+        }
+
+        // Save cancellation email notification
+        await queueEmailNotification(
+            manager,
+            appointmentWithPatient,
+            appointmentWithPatient.patient.email,
+            "cancellation"
+        );
+
+        console.log(
+            "Cancellation email notification created:",
+            appointment.appointmentId
+        );
+
 
         return {
             appointmentId: appointment.appointmentId,

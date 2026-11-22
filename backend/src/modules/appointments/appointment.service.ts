@@ -7,6 +7,7 @@ import { Patient } from "../../entities/Patient.js";
 import { Doctor } from "../../entities/Doctor.js";
 import { DentalService } from "../../entities/DentalService.js";
 import { Appointment } from "../../entities/Appointment.js";
+import { queueEmailNotification } from "../notifications/notification.service.js";
 
 import type {
     CreateAppointmentDTO,
@@ -277,7 +278,17 @@ export async function createAppointment(
         const savedAppointment = await manager
             .getRepository(Appointment)
             .save(appointment);
+        await queueEmailNotification(
+            manager,
+            savedAppointment,
+            savedPatient.email,
+            "confirmation"
+        );
 
+        console.log(
+            "Confirmation notification queued for appointment:",
+            savedAppointment.appointmentId
+        );
         return {
             appointmentId: savedAppointment.appointmentId,
             bookingReference: savedAppointment.bookingReference,
