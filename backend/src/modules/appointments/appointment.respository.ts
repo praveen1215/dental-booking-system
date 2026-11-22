@@ -1,6 +1,11 @@
-import { AppDataSource } from "../../config/data_source.js";
-import { Appointment } from "../../entities/Appointment.js";
 
-export function getAppointmentRespository() {
-    return AppDataSource.getRepository(Appointment);
-}
+import { Router } from "express";
+import {
+    createAppointmentController
+} from "./appointment.controller.js";
+
+const router = Router();
+
+router.post("/", createAppointmentController);
+
+export default router;
