@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { getAllDentalServicesController } from "./service.controller.js";
+
+import {getAllDentalServicesController}
+    
+from "./service.controller.js";
 
 const router = Router();
 

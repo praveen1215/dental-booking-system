@@ -6,7 +6,7 @@ import healthRouter from "./modules/health/health.routes.js";
 import appointmentRouter from "./modules/appointments/appointement.routes.js";
 import serviceRouter from "./modules/services/service.routes.js";
 import authRouter from "./modules/auth/auth.routes.js";
-
+import doctorServiceRouter from "./modules/doctor/doctor.service.routes.js";
 import { sessionMiddleware } from "./config/session.js";
 
 const app = express();
@@ -47,6 +47,9 @@ app.use("/api", healthRouter);
 app.use("/api/appointments", appointmentRouter);
 app.use("/api/services", serviceRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/doctor/services", doctorServiceRouter);
+
+
 
 app.use((
     error: unknown,
