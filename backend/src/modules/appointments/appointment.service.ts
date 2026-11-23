@@ -357,3 +357,204 @@ export async function getDoctorAppointments(
     };
 }
 
+
+export async function getAvailableAppointmentSlots(
+    date: string,
+    serviceId: string
+) {
+    // 1. Validate the date
+    const selectedDate = DateTime.fromISO(date, {
+        zone: clinicTimezone
+    });
+
+    if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+        !selectedDate.isValid ||
+        selectedDate.toFormat("yyyy-MM-dd") !== date
+    ) {
+        throw new AppointmentError(400, "Invalid appointment date.");
+    }
+
+    if (!/^\d+$/.test(serviceId)) {
+        throw new AppointmentError(400, "Invalid service ID.");
+    }
+
+    // 2. Find the doctor
+    const doctor = await AppDataSource
+        .getRepository(Doctor)
+        .findOne({ where: {} });
+
+    if (!doctor) {
+        throw new AppointmentError(
+            503,
+            "No doctor is configured."
+        );
+    }
+
+    // 3. Find the selected dental service
+    const service = await AppDataSource
+        .getRepository(DentalService)
+        .findOneBy({ serviceId });
+
+    if (!service) {
+        throw new AppointmentError(
+            404,
+            "Dental service not found."
+        );
+    }
+
+    const duration = service.durationMinutes;
+
+    if (!Number.isInteger(duration) || duration <= 0) {
+        throw new AppointmentError(
+            500,
+            "Dental service has an invalid duration."
+        );
+    }
+
+    // 4. Check special schedule overrides
+    const overrides = await AppDataSource.query(
+        `SELECT "isClosed", "startTime", "endTime"
+         FROM doctor_schedule_overrides
+         WHERE "doctorId" = $1
+           AND "overrideDate" = $2::date`,
+        [doctor.doctorId, date]
+    );
+
+    let workingHours: Array<{
+        startTime: string;
+        endTime: string;
+    }> = [];
+
+    if (overrides.length > 0) {
+        const override = overrides[0];
+
+        if (!override.isClosed) {
+            workingHours = [{
+                startTime: override.startTime,
+                endTime: override.endTime
+            }];
+        }
+    } else {
+        // Luxon: Monday=1 ... Sunday=7
+        // Database: Sunday=0 ... Saturday=6
+        const dayOfWeek = selectedDate.weekday % 7;
+
+        workingHours = await AppDataSource.query(
+            `SELECT "startTime", "endTime"
+             FROM doctor_schedules
+             WHERE "doctorId" = $1
+               AND "dayOfWeek" = $2`,
+            [doctor.doctorId, dayOfWeek]
+        );
+    }
+
+    // No working hours means no available slots
+    if (workingHours.length === 0) {
+        return {
+            date,
+            serviceId,
+            durationMinutes: duration,
+            availableSlots: []
+        };
+    }
+
+    // 5. Read unavailable periods and confirmed bookings
+    const dayStart = selectedDate.startOf("day");
+    const dayEnd = dayStart.plus({ days: 1 });
+
+    const [unavailable, booked] = await Promise.all([
+        AppDataSource.query(
+            `SELECT "startTime", "endTime"
+             FROM doctor_unavailability
+             WHERE "doctorId" = $1
+               AND "startTime" < $3
+               AND "endTime" > $2`,
+            [
+                doctor.doctorId,
+                dayStart.toUTC().toJSDate(),
+                dayEnd.toUTC().toJSDate()
+            ]
+        ),
+        AppDataSource.query(
+            `SELECT "startTime", "endTime"
+             FROM appointments
+             WHERE "doctorId" = $1
+               AND "status" = 'confirmed'
+               AND "startTime" < $3
+               AND "endTime" > $2`,
+            [
+                doctor.doctorId,
+                dayStart.toUTC().toJSDate(),
+                dayEnd.toUTC().toJSDate()
+            ]
+        )
+    ]);
+
+    // 6. Generate available start times
+    const availableSlots = new Set<string>();
+    const now = DateTime.now().setZone(clinicTimezone);
+
+    for (const hours of workingHours) {
+        const opening = DateTime.fromISO(
+            `${date}T${hours.startTime.slice(0, 5)}`,
+            { zone: clinicTimezone }
+        );
+
+        const closing = DateTime.fromISO(
+            `${date}T${hours.endTime.slice(0, 5)}`,
+            { zone: clinicTimezone }
+        );
+
+        if (!opening.isValid || !closing.isValid) {
+            continue;
+        }
+
+        // Generate a potential start every 30 minutes
+        for (
+            let start = opening;
+            start.plus({ minutes: duration }) <= closing;
+            start = start.plus({ minutes: 30 })
+        ) {
+            const end = start.plus({ minutes: duration });
+
+            // Do not show past times
+            if (start <= now) {
+                continue;
+            }
+
+            const startMs = start.toMillis();
+            const endMs = end.toMillis();
+
+            const hasConflict = [...booked, ...unavailable]
+                .some((period: {
+                    startTime: string | Date;
+                    endTime: string | Date;
+                }) => {
+                    const busyStart = new Date(
+                        period.startTime
+                    ).getTime();
+
+                    const busyEnd = new Date(
+                        period.endTime
+                    ).getTime();
+
+                    return (
+                        startMs < busyEnd &&
+                        endMs > busyStart
+                    );
+                });
+
+            if (!hasConflict) {
+                availableSlots.add(start.toFormat("HH:mm"));
+            }
+        }
+    }
+
+    return {
+        date,
+        serviceId,
+        durationMinutes: duration,
+        availableSlots: [...availableSlots].sort()
+    };
+}
