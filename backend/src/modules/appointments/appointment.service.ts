@@ -302,5 +302,58 @@ export async function createAppointment(
             endTime: endUtc.toISOString(),
             status: "confirmed"
         };
-    });
+    }); 
 }
+export async function getDoctorAppointments(
+    doctorId: string,
+    page: number = 1,
+    limit: number = 20
+) {
+    const repository = AppDataSource.getRepository(Appointment);
+
+    const [appointments, total] = await repository.findAndCount({
+        where: {
+            doctor: {
+                doctorId
+            }
+        },
+        relations: {
+            patient: true,
+            dentalService: true
+        },
+        order: {
+            startTime: "DESC"
+        },
+        skip: (page - 1) * limit,
+        take: limit
+    });
+
+    const data = appointments.map((appointment) => ({
+        appointmentId: appointment.appointmentId,
+        bookingReference: appointment.bookingReference,
+
+        patientName: appointment.patient.patientName,
+        patientEmail: appointment.patient.email,
+        patientPhone: appointment.patient.phone,
+
+        serviceName: appointment.dentalService.serviceName,
+        durationMinutes: appointment.dentalService.durationMinutes,
+
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+
+        status: appointment.status,
+        createdAt: appointment.createdAt
+    }));
+
+    return {
+        data,
+        pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit)
+        }
+    };
+}
+
