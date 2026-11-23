@@ -4,9 +4,8 @@ import type {
     Response,
     NextFunction
 } from "express";
-import {getDoctorAppointments}
-from "./appointment.service.js";
-import { createAppointment } from "./appointment.service.js";
+
+import { createAppointment,getDoctorAppointments,getAvailableAppointmentSlots } from "./appointment.service.js";
 import { AppointmentError } from "./appointment.types.js";
 
 export async function createAppointmentController(
@@ -99,6 +98,35 @@ export async function getDoctorAppointmentsController(
 
         return res.status(200).json(result);
 
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getAvailableAppointmentSlotsController(
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> {
+    try {
+        const { date, serviceId } = req.query;
+
+        if (
+            typeof date !== "string" ||
+            typeof serviceId !== "string"
+        ) {
+            res.status(400).json({
+                message: "Date and serviceId are required."
+            });
+            return;
+        }
+
+        const result = await getAvailableAppointmentSlots(
+            date,
+            serviceId
+        );
+
+        res.status(200).json(result);
     } catch (error) {
         next(error);
     }

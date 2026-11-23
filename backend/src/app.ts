@@ -55,6 +55,9 @@ app.use("/api/doctor/services", doctorServiceRouter);
 app.use("/api/doctor/schedule", scheduleRouter);
 app.use("/api/doctor/appointments", cancellationRouter);
 app.use("/api/doctor/appointments", doctorAppointmentRouter);
+app.use("/api/appointments", appointmentRouter);
+
+
 app.use((
     error: unknown,
     req: express.Request,
