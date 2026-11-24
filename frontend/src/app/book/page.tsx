@@ -354,6 +354,18 @@ export default function BookingPage() {
         time: selectedTime,
       };
 
+        const cleanedEmail = patient.email.trim();
+
+        const gmailPattern =
+            /^[a-z0-9]+(?:\.[a-z0-9]+)*(?:\+[a-z0-9]+(?:\.[a-z0-9]+)*)?@gmail\.com$/;
+
+        if (!gmailPattern.test(cleanedEmail)) {
+            setError(
+            "Please enter a valid lowercase Gmail address ending with @gmail.com."
+            );
+            return;
+        }
+
       const response = await fetch(
         "/clinic-api/appointments",
         {
@@ -749,6 +761,7 @@ export default function BookingPage() {
                   id="patient-email"
                   type="email"
                   required
+                  pattern="[a-z0-9]+(\.[a-z0-9]+)*(\+[a-z0-9]+(\.[a-z0-9]+)*)?@gmail\.com"
                   maxLength={255}
                   autoComplete="email"
                   placeholder="name@example.com"

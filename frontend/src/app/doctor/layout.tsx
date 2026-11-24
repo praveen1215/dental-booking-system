@@ -7,7 +7,7 @@ export default function DoctorLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#f7f9ff]">
+    <div className="doctor-portal min-h-screen bg-[#f7f9ff]">
       <DoctorGate>{children}</DoctorGate>
     </div>
   );

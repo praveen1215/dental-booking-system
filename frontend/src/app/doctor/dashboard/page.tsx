@@ -322,28 +322,6 @@ async function cancelAppointment() {
               View and manage patient appointment information.
             </p>
           </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Button
-              variant="outline"
-              onPress={() => void refresh()}
-              isDisabled={refreshing}
-              className="rounded-xl"
-            >
-              <RefreshCw size={17} />
-              {refreshing ? "Refreshing..." : "Refresh"}
-            </Button>
-
-            <Button
-              variant="outline"
-              onPress={() => void logout()}
-              isDisabled={loggingOut}
-              className="rounded-xl border-red-200 text-red-600"
-            >
-              <LogOut size={17} />
-              {loggingOut ? "Logging Out..." : "Logout"}
-            </Button>
-          </div>
         </div>
 
         {error && (
@@ -388,19 +366,38 @@ async function cancelAppointment() {
           </div>
         </div>
 
+        
         {/* Appointments table */}
         <section className="overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-sm">
-          <div className="flex items-center gap-3 border-b border-slate-100 p-6">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-100 p-6">
+
+            {/* Left side: Heading */}
+            <div className="flex items-center gap-3">
             <Users size={24} className="text-blue-600" />
+
             <div>
-              <h2 className="text-xl font-bold text-[#15224D]">
+                <h2 className="text-xl font-bold text-[#15224D]">
                 Patient Appointments
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
                 All bookings associated with your doctor account.
-              </p>
+                </p>
             </div>
-          </div>
+            </div>
+
+            {/* Right side: Refresh button */}
+            <button
+            type="button"
+            onClick={() => void refresh()}
+            disabled={  refreshing || loading }
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            >
+            <RefreshCw size={18}
+            className={refreshing ? "animate-spin" : ""} />
+            {refreshing ? "Refreshing..." : "Refresh"}
+            </button>
+        </div>
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[900px] text-left text-sm">

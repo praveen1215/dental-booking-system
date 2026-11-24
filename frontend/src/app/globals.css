@@ -25,3 +25,22 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Doctor Portal - Input Text Colors */
+
+.doctor-portal input,
+.doctor-portal textarea,
+.doctor-portal select {
+  color: #111827;
+}
+
+/* Keep placeholder text grey */
+.doctor-portal input::placeholder,
+.doctor-portal textarea::placeholder {
+  color: #9ca3af;
+}
+
+/* Make selected options black */
+.doctor-portal select option {
+  color: #111827;
+}

@@ -237,22 +237,19 @@ export default function HomePage() {
   <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
 
     {/* Copyright and website information */}
-    <div className="text-sm text-slate-500">
-      <p className="font-medium text-slate-700">
-        © {new Date().getFullYear()} DentalCare — Dental Clinic Booking System
-      </p>
-
-      <p className="mt-1 text-xs">
-        Portfolio demonstration website
+        
+    <div className="w-full text-center">
+      <p className="text-sm text-[#75777c] sm:text-base">
+        © {new Date().getFullYear()} Dental Care — Dental Clinic Book Your Appointments
       </p>
     </div>
 
     {/* Doctor Login */}
     <Link
       href="/doctor/login"
-      className="flex items-center gap-2 text-sm font-medium text-slate-600 transition-colors hover:text-blue-600"
+      className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap text-sm font-medium text-[#75777c] transition-colors hover:text-blue-600"
     >
-      <LockKeyhole size={17} />
+      <LockKeyhole size={15} />
       Doctor Login
       <ArrowRight size={15} />
     </Link>
