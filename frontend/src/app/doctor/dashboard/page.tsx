@@ -10,6 +10,8 @@ import {
   LogOut,
   RefreshCw,
   Users,
+  XCircle,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@heroui/react";
 
@@ -69,6 +71,12 @@ export default function DoctorDashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
+
+  const [appointmentToCancel, setAppointmentToCancel] =
+  useState<Appointment | null>(null);
+
+    const [cancellationReason, setCancellationReason] = useState("");
+    const [cancelling, setCancelling] = useState(false);
 
   const loadAppointments = useCallback(
     async (currentPage: number, signal?: AbortSignal) => {
@@ -227,6 +235,74 @@ export default function DoctorDashboardPage() {
     );
   }
 
+async function cancelAppointment() {
+  if (!appointmentToCancel) return;
+
+  const reason = cancellationReason.trim();
+
+  if (!reason) {
+    setError("Please provide a reason for cancellation.");
+    return;
+  }
+
+  const csrfToken =
+    sessionStorage.getItem("doctorCsrfToken");
+
+  if (!csrfToken) {
+    setError("Doctor security token is missing. Please log in again.");
+    return;
+  }
+
+  setCancelling(true);
+  setError("");
+
+  try {
+    // IMPORTANT: Confirm the cancellation route and method
+    // against your existing Express appointment router.
+    const response = await fetch(
+      `/clinic-api/doctor/appointments/${encodeURIComponent(
+        appointmentToCancel.appointmentId
+      )}/cancel`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken,
+        },
+        body: JSON.stringify({
+          reason,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => null);
+
+      throw new Error(
+        result?.message ??
+        result?.error ??
+        `Cancellation failed (${response.status}).`
+      );
+    }
+
+    // Close the dialog after successful cancellation.
+    setAppointmentToCancel(null);
+    setCancellationReason("");
+
+    // Refresh appointment statuses from PostgreSQL.
+    await loadAppointments(page);
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Unable to cancel appointment."
+    );
+  } finally {
+    setCancelling(false);
+  }
+}
+
   return (
     <main className="min-h-screen bg-[#f7f9ff] px-5 py-12 text-slate-900 sm:px-8">
       <div className="mx-auto max-w-7xl">
@@ -348,6 +424,9 @@ export default function DoctorDashboardPage() {
                   <th className="px-6 py-4 font-semibold">
                     Status
                   </th>
+                  <th className="px-6 py-4 font-semibold">
+                    Actions
+                  </th>
                 </tr>
               </thead>
 
@@ -401,6 +480,28 @@ export default function DoctorDashboardPage() {
                         {appointment.status}
                       </span>
                     </td>
+
+                    <td className="px-6 py-5">
+                    {appointment.status === "confirmed" ? (
+                        <button
+                        type="button"
+                        onClick={() => {
+                            setAppointmentToCancel(appointment);
+                            setCancellationReason("");
+                            setError("");
+                        }}
+                        className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                        >
+                        <XCircle size={16} />
+                        Cancel
+                        </button>
+                    ) : (
+                        <span className="text-sm text-slate-400">
+                        No actions
+                        </span>
+                    )}
+                    </td>
+
                   </tr>
                 ))}
               </tbody>
@@ -443,6 +544,103 @@ export default function DoctorDashboardPage() {
           </div>
         </section>
       </div>
+        
+        {appointmentToCancel && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 px-4 py-8">
+            <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cancel-dialog-title"
+            className="w-full max-w-lg rounded-3xl bg-white p-7 shadow-2xl sm:p-9"
+            >
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                <AlertTriangle size={29} />
+            </div>
+
+            <h2
+                id="cancel-dialog-title"
+                className="mt-6 text-2xl font-bold text-[#15224D]"
+            >
+                Cancel Appointment
+            </h2>
+
+            <p className="mt-3 leading-7 text-slate-600">
+                You are about to cancel the appointment for{" "}
+                <strong>{appointmentToCancel.patientName}</strong>.
+            </p>
+
+            <div className="mt-5 rounded-xl bg-slate-50 p-4 text-sm">
+                <p className="font-semibold text-slate-800">
+                {appointmentToCancel.bookingReference}
+                </p>
+                <p className="mt-1 text-slate-500">
+                {appointmentToCancel.serviceName}
+                </p>
+            </div>
+
+            <label
+                htmlFor="cancellation-reason"
+                className="mt-7 block text-sm font-semibold text-slate-700"
+            >
+                Reason for Cancellation *
+            </label>
+
+            <textarea
+                id="cancellation-reason"
+                required
+                rows={4}
+                maxLength={500}
+                value={cancellationReason}
+                onChange={(event) =>
+                setCancellationReason(event.target.value)
+                }
+                placeholder="Example: The doctor is unavailable due to a medical emergency."
+                className="mt-2 w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+
+            <p className="mt-2 text-xs leading-6 text-slate-500">
+                The patient should be informed of the cancellation
+                and its reason through the clinic notification system.
+            </p>
+
+            {error && (
+                <p role="alert" className="mt-4 text-sm text-red-600">
+                {error}
+                </p>
+            )}
+
+            <div className="mt-8 flex flex-wrap justify-end gap-3">
+                <button
+                type="button"
+                disabled={cancelling}
+                onClick={() => {
+                    setAppointmentToCancel(null);
+                    setCancellationReason("");
+                    setError("");
+                }}
+                className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                >
+                Keep Appointment
+                </button>
+
+                <button
+                type="button"
+                disabled={
+                    cancelling ||
+                    cancellationReason.trim().length === 0
+                }
+                onClick={() => void cancelAppointment()}
+                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                <XCircle size={17} />
+                {cancelling
+                    ? "Cancelling..."
+                    : "Confirm Cancellation"}
+                </button>
+            </div>
+            </div>
+        </div>
+        )}
     </main>
   );
 }
