@@ -53,8 +53,24 @@ function todayInClinic(): string {
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
-function formatTime(time: string): string {
+function formatTime(time?: string): string {
+  if (!time || typeof time !== "string") {
+    return "Time unavailable";
+  }
+
   const [hours, minutes] = time.split(":").map(Number);
+
+  if (
+    !Number.isInteger(hours) ||
+    !Number.isInteger(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return "Time unavailable";
+  }
+
   const period = hours >= 12 ? "PM" : "AM";
   const hour12 = hours % 12 || 12;
 
@@ -360,9 +376,18 @@ export default function BookingPage() {
         );
       }
 
-      const result: BookingResult = await response.json();
+      const result = await response.json();
 
-      setBooking(result);
+        setBooking({
+        ...result,
+        patientName: result.patientName ?? patient.patientName.trim(),
+        dentalService:
+            result.dentalService ?? selectedService.serviceName,
+        date: result.date ?? date,
+        time: result.time ?? selectedTime,
+        });
+
+      
     } catch (err) {
       setError(
         err instanceof Error

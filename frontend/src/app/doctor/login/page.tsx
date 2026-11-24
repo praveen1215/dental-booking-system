@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
@@ -10,6 +11,7 @@ import {
   LockKeyhole,
   Mail,
   ShieldCheck,
+  ArrowLeft
 } from "lucide-react";
 import { Button } from "@heroui/react";
 
@@ -226,6 +228,15 @@ export default function DoctorLoginPage() {
               Doctor accounts are created by the clinic
               administrator. Public registration is disabled.
             </p>
+            <div className="mt-8 border-t border-slate-100 pt-6 text-center">
+            <Link
+                href="/"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 transition hover:text-blue-800"
+            >
+                <ArrowLeft size={17} />
+                Back to Home
+            </Link>
+            </div>
           </form>
         </div>
       </div>

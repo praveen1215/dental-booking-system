@@ -7,6 +7,8 @@ import {
   Plus,
   RefreshCw,
   Clock3,
+  Pencil,
+  Save,
 } from "lucide-react";
 import {
   DOCTOR_API,
@@ -55,6 +57,11 @@ export default function DoctorServicesPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDuration, setEditDuration] = useState("");
+  const [updating, setUpdating] = useState(false);
+
 
   const loadServices = useCallback(async () => {
     setLoading(true);
@@ -120,6 +127,71 @@ export default function DoctorServicesPage() {
       setSaving(false);
     }
   }
+    function startEditing(service: Service) {
+    setEditingService(service);
+    setEditName(service.serviceName);
+    setEditDuration(String(service.durationMinutes));
+    setError("");
+    setSuccess("");
+    }
+
+    function stopEditing() {
+    setEditingService(null);
+    setEditName("");
+    setEditDuration("");
+    }
+
+        async function updateService(
+        event: React.FormEvent<HTMLFormElement>
+        ) {
+        event.preventDefault();
+
+        if (!editingService) return;
+
+        setError("");
+        setSuccess("");
+
+        const durationNumber = Number(editDuration);
+
+        if (
+            !editName.trim() ||
+            !Number.isInteger(durationNumber) ||
+            durationNumber <= 0
+        ) {
+            setError("Enter a valid service name and duration.");
+            return;
+        }
+
+        setUpdating(true);
+
+        try {
+            await doctorRequest(
+            `${DOCTOR_API.createService}/${encodeURIComponent(
+                editingService.serviceId
+            )}`,
+            {
+                method: "PATCH",
+                body: JSON.stringify({
+                durationMinutes: durationNumber,
+                }),
+            }
+            );
+
+            stopEditing();
+
+            await loadServices();
+
+            setSuccess("Dental service updated successfully.");
+        } catch (err) {
+            setError(
+            err instanceof Error
+                ? err.message
+                : "Unable to update dental service."
+            );
+        } finally {
+            setUpdating(false);
+        }
+        }
 
   return (
     <main className="mx-auto max-w-7xl px-5 py-12 sm:px-8">
@@ -234,9 +306,14 @@ export default function DoctorServicesPage() {
                     </p>
                   </div>
 
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                    Service
-                  </span>
+                 <button
+                    type="button"
+                    onClick={() => startEditing(service)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
+                    >
+                    <Pencil size={16} />
+                    Edit
+                    </button>
                 </div>
               ))}
             </div>
@@ -256,6 +333,97 @@ export default function DoctorServicesPage() {
           {error || success}
         </div>
       )}
-    </main>
-  );
+
+
+{editingService && (
+  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-service-title"
+      className="w-full max-w-lg rounded-3xl bg-white p-7 shadow-2xl sm:p-9"
+    >
+      <div className="flex size-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+        <Pencil size={26} />
+      </div>
+
+      <h2
+        id="edit-service-title"
+        className="mt-5 text-2xl font-bold text-[#15224D]"
+      >
+        Edit Dental Service
+      </h2>
+
+      <p className="mt-2 text-sm leading-6 text-slate-500">
+        Update the service information without creating
+        a duplicate service.
+      </p>
+
+      <form
+        onSubmit={(event) => void updateService(event)}
+        className="mt-7 space-y-5"
+      >
+        <div>
+          <label
+            htmlFor="edit-service-name"
+            className="text-sm font-semibold text-slate-700"
+          >
+            Service Name
+          </label>
+
+          <input
+            id="edit-service-name"
+            type="text"
+            value={editName}
+            readOnly
+            className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="edit-service-duration"
+            className="text-sm font-semibold text-slate-700"
+          >
+            Duration (Minutes)
+          </label>
+
+          <input
+            id="edit-service-duration"
+            type="number"
+            required
+            min={1}
+            max={480}
+            step={1}
+            value={editDuration}
+            onChange={(event) => setEditDuration(event.target.value)}
+            className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 pt-3">
+          <button
+            type="button"
+            onClick={stopEditing}
+            disabled={updating}
+            className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            disabled={updating}
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            <Save size={17} />
+            {updating ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+  </main>
+ );
 }

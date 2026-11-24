@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Smile,
   Sparkles,
+  LockKeyhole,
 } from "lucide-react";
 
 import { Button } from "@heroui/react";
@@ -231,12 +232,34 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t bg-slate-50 px-6 py-8 text-center text-sm text-slate-500">
-        DentalCare — Dental Clinic Booking System
-        <span className="block">
-          Portfolio demonstration website
-        </span>
-      </footer>
+      
+<footer className="border-t border-slate-200 bg-slate-50 px-6 py-8">
+  <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+
+    {/* Copyright and website information */}
+    <div className="text-sm text-slate-500">
+      <p className="font-medium text-slate-700">
+        © {new Date().getFullYear()} DentalCare — Dental Clinic Booking System
+      </p>
+
+      <p className="mt-1 text-xs">
+        Portfolio demonstration website
+      </p>
+    </div>
+
+    {/* Doctor Login */}
+    <Link
+      href="/doctor/login"
+      className="flex items-center gap-2 text-sm font-medium text-slate-600 transition-colors hover:text-blue-600"
+    >
+      <LockKeyhole size={17} />
+      Doctor Login
+      <ArrowRight size={15} />
+    </Link>
+
+  </div>
+</footer>
+
     </main>
   );
 }
