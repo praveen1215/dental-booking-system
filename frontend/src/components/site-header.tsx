@@ -69,7 +69,9 @@ export function SiteHeader() {
 
     return pathname === href;
   }
-
+  if (pathname.startsWith("/doctor")) {
+  return null;
+}
   return (
     <header className="sticky top-0 z-50 border-b border-blue-100 bg-white/95 backdrop-blur-md">
       <nav className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-4 px-5 sm:px-8">
@@ -152,4 +154,5 @@ export function SiteHeader() {
       </nav>
     </header>
   );
+  
 }
