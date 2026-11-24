@@ -46,6 +46,7 @@ export default function AboutPage() {
   return (
     <main className="min-h-screen bg-white text-slate-900">
 
+
       {/* ABOUT HERO */}
       <section className="relative overflow-hidden bg-[#f7f9ff]">
         <div className="absolute -right-24 -top-32 h-80 w-80 rounded-full bg-cyan-100 opacity-80" />

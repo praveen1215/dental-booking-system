@@ -54,7 +54,7 @@ export async function cancelAppointmentController(
         const result = await cancelAppointment(
             appointmentId,
             doctorId,
-            reason
+            reason.trim()
         );
 
         return res.status(200).json({

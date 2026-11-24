@@ -43,13 +43,20 @@ function validateInput(data: CreateAppointmentDTO) {
         throw new AppointmentError(400, "Invalid phone number.");
     }
 
+    
     if (
         typeof data.email !== "string" ||
-        data.email.length > 255 ||
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())
+        data.email.trim().length > 255 ||
+        !/^[a-z0-9]+(?:\.[a-z0-9]+)*(?:\+[a-z0-9]+(?:\.[a-z0-9]+)*)?@gmail\.com$/.test(
+            data.email.trim()
+        )
     ) {
-        throw new AppointmentError(400, "Invalid email address.");
+        throw new AppointmentError(
+            400,
+            "Please enter a valid lowercase Gmail address ending with @gmail.com."
+        );
     }
+
 
     if (
         typeof data.dentalService !== "string" ||

@@ -73,7 +73,7 @@ export async function createDentalServiceController(
         }
 
         const service = await createDentalService(
-            serviceName,
+            serviceName.trim(),
             durationMinutes
         );
 

@@ -33,22 +33,29 @@ function getToday(): string {
   return `${value("year")}-${value("month")}-${value("day")}`;
 }
 
-function displayDate(date: string): string {
-  const parsed = new Date(`${date.slice(0, 10)}T12:00:00Z`);
+
+function displayDate(value: string): string {
+  if (!value) {
+    return "Date unavailable";
+  }
+
+  const parsed = new Date(value);
 
   if (Number.isNaN(parsed.getTime())) {
-    return date;
+    return "Date unavailable";
   }
 
   return new Intl.DateTimeFormat("en-GB", {
-    timeZone: "UTC",
+    timeZone: "Asia/Colombo",
     day: "2-digit",
-    month: "short",
+    month: "long",
     year: "numeric",
   }).format(parsed);
 }
 
-function parseUnavailableDates(result: unknown): UnavailableDate[] {
+function parseUnavailableDates(
+  result: unknown
+): UnavailableDate[] {
   const wrapper =
     result && typeof result === "object"
       ? (result as {
@@ -59,7 +66,7 @@ function parseUnavailableDates(result: unknown): UnavailableDate[] {
 
   const raw = Array.isArray(result)
     ? result
-    : wrapper?.data ?? wrapper?.unavailability;
+    : wrapper?.unavailability ?? wrapper?.data;
 
   if (!Array.isArray(raw)) {
     throw new Error("Unexpected unavailable dates response.");
@@ -68,15 +75,21 @@ function parseUnavailableDates(result: unknown): UnavailableDate[] {
   return raw.map((item) => {
     const entry = item as Record<string, unknown>;
 
-    const date = String(entry.date ?? "");
-
     return {
-      id: String(entry.id ?? entry.unavailabilityId ?? date),
-      date,
-      reason: String(entry.reason ?? ""),
+      id: String(
+        entry.unavailabilityId ?? entry.id ?? ""
+      ),
+      date: String(
+        entry.startTime ?? entry.date ?? ""
+      ),
+      reason:
+        typeof entry.reason === "string"
+          ? entry.reason
+          : "",
     };
   });
 }
+
 function getNextDate(date: string): string {
   const next = new Date(`${date}T00:00:00Z`);
   next.setUTCDate(next.getUTCDate() + 1);

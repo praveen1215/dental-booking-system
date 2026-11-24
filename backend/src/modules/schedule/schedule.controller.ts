@@ -262,7 +262,7 @@ export const createUnavailabilityController = handle(
             reason !== null &&
             (
                 typeof reason !== "string" ||
-                reason.length > 1000
+                reason.trim().length > 1000
             )
         ) {
             return res.status(400).json({
